@@ -1,7 +1,8 @@
 using namespace std; 
 //use some qt package? 
-typedef QPixmap* ImgDraw; 
-//the QPixmap on which we wanna draw the music notation on, 
+#include<QPainter> 
+typedef QPainter* ImgDraw; 
+//the QPainter on which we wanna draw the music notation on, 
 //or whatever it is, QImage? figure it out later. 
 class nmn { //nmn stands for numbered musical notation. 
   struct note { 
