@@ -10,8 +10,16 @@ module Stave
   #presumably a list. After I stored it, let the client program
   #to parse it for itself, see staveview.h
 
+  #This is a useful method. 
+  #https://ruby-china.org/topics/17382
+  def define_class(name, ancestor = Object)
+    Object.const_set(name, Class.new(ancestor))
+    Object.const_get(name).class_eval(&Proc.new) if block_given?
+    Object.const_get(name)      # return defined class always
+  end
+
   class MusicObject
-    #should have methods self.width, self.draw
+    #should have methods width, draw
   end
 
   class Accidental < MusicObject
@@ -57,13 +65,36 @@ module Stave
   class SixteenthNote < FlaggedNote
   end
 
+  #Define dotted version of these notes. These should be almost the same. 
+  NoteKinds = [WholeNote, HalfNote, QuaterNote, EighthNote, SixteenthNote]
+  #Now something annoying comes. Logically DEighthNote, DSixteenthNote
+  #derives from FlaggedNote, and yet they don't flag. 
+  #Second thought: No they don't derive from them. See code below. 
+  NoteKinds.each do |kind|
+    local_kind = kind
+    define_class('D' + kind.to_s, NonflaggedNote) do 
+      attr_accessor :note
+      def initialize
+        note = kind.new 
+      end
+
+      def width
+        #something like call that in note, then add a constant, i.e., width of dot. 
+      end
+
+      def draw
+        #something like call that in note, then draw a dot. 
+      end
+    end
+    #So clean! The code didn't grow out of control! 
+  end
+    
+
   def newNote(duration, clef)
-    recipe = {4 => Note, 3 => HalfNote, 2 => HalfNote, 1 => QuaterNote,
-              1.5 => QuaterNote, 0.75 => EighthNote, 0.5 => EighthNote, 
-              0.375 => SixteenthNote, 0.25 => SixteenNote}
-    dottedList = [3, 1.5, .75, .375]
-    dotted = dottedList.include? duration
-    recipe[duration].new dotted, clef
+    recipe = {4 => WholeNote, 3 => DHalfNote, 2 => HalfNote, 1 => QuaterNote,
+              1.5 => DQuaterNote, 0.75 => DEighthNote, 0.5 => EighthNote, 
+              0.375 => DSixteenthNote, 0.25 => SixteenNote}
+    recipe[duration].new clef
     #It's obvious that after the controller call newNote, it's gonna 
     #send some messages to the new note, so that it can be provided
     #enough information so that it can figure out how to draw itself. 
