@@ -6,6 +6,10 @@ module Stave
   #stupid details. 
   #In other words, model, view, controller should be separated. 
 
+  #I'm gonna store the drawing commands in some data structure, 
+  #presumably a list. After I stored it, let the client program
+  #to parse it for itself, see staveview.h
+
   class MusicObject
     #should have methods self.width, self.draw
   end
