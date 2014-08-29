@@ -18,6 +18,20 @@ module Stave
     Object.const_get(name)      # return defined class always
   end
 
+  class Position
+    #Each music object occupies some place, which should be 
+    #characterized by this class. A position has two representations: 
+    #the first (high level) as the x-coordinate on the stave if the 
+    #stave is rendered on an infinitely wide page, and line number
+    #on which it occupies. 
+    #the second (low level) as x and y on the image. 
+
+    #When we specify a position in MusicObject, we specify the high
+    #level version. The conversion between high and low position
+    #should be implemented in the class, which enables us to create
+    #low-level drawing commands to the C++ drawing program. 
+  end
+
   class MusicObject
     #should have methods width, draw
   end
@@ -44,7 +58,8 @@ module Stave
     #clef: :treble, :bass
   end
 
-  class FlaggedNote < Note #Flagged notes can stick together. 
+  class FlaggedNote < Note 
+    #Cautious! Flagged notes can stick together. 
   end
 
   class NonflaggedNote < Note
@@ -71,7 +86,6 @@ module Stave
   #derives from FlaggedNote, and yet they don't flag. 
   #Second thought: No they don't derive from them. See code below. 
   NoteKinds.each do |kind|
-    local_kind = kind
     define_class('D' + kind.to_s, NonflaggedNote) do 
       attr_accessor :note
       def initialize
