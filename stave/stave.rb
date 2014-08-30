@@ -32,6 +32,11 @@ module Stave
     #low-level drawing commands to the C++ drawing program. 
   end
 
+  class Flag
+    #Flags seems to be so annoying that I decided to make it a 
+    #separate class. 
+  end
+
   class MusicObject
     #should have methods width, draw
   end
