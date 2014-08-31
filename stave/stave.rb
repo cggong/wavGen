@@ -44,12 +44,7 @@ module Stave
     #a Position instance that enable you to describe relative position
     #to it, which in turn still has such capability (see def around). 
     def initialize(parent = nil)
-      @pa = 
-        if parent
-          parent.a + parent.pa
-        else
-          0
-        end
+      @pa = parent ? parent.a + parent.pa : 0
     end
 
     def here(block) #This is fucking good! 
@@ -64,19 +59,29 @@ module Stave
       Position.new self
     end
 
-    private:
-      def drawWholeNote(b) #and a bunch of drawing methods. 
-        #ultimately calls Draw.drawWholeNote
-      end
+    private
+    def get_b_val(tone)
+    end
+
+    def drawWholeNote(tone) #and a bunch of drawing methods. 
+      #ultimately calls Draw.drawWholeNote
+    end
 
 
   end
 
 
   module Draw #layout constants and drawing methods
-    W = 100 #width
+    W = 100 #width of page
     H = 5 #distance between two lines.
     D = 20 #space between two five-lines. 
+
+    #regarding an ellipsis for note: 
+    EX = 8
+    EY = 5
+
+    #Distance between accidental and note
+    ShortDist = 1
 
     def self.drawWholeNote(x, y)
     end
@@ -100,10 +105,11 @@ module Stave
 
   class MusicObject
     #should have methods width, draw
+    attr_accessor :width
   end
 
   class Accidental < MusicObject
-    attr_accessor :note 
+    attr_accessor :note
     #Every Accidental belongs to a note, except at the beginning of a mesure. 
     def initialize(note)
       @note = note
@@ -119,9 +125,13 @@ module Stave
   class Sharp < Accidental
   end
 
+  class NoAccidental < Accidental
+  end
+
   class Note < MusicObject #A bunch of notes sticking together
-    attr_accessor :clef, :duration
+    attr_accessor :clef, :duration, :tones, :accidental
     #clef: :treble, :bass
+
   end
 
   class FlaggedNote < Note 
@@ -137,7 +147,16 @@ module Stave
       drawWholeNote
     end
 
-    def width
+    def initialize(tones)
+      #How are the notes structured? 
+      evenTones = tones.select &:even? 
+      oddTones = tones.select &:odd? 
+      @tones = 
+        if evenTones.length > oddTones.length 
+        then [evenTones, oddTones] 
+        else [oddTones, evenTones]
+        end
+
     end
   end
 
@@ -227,6 +246,9 @@ module Stave
                      curPos.here object.draw
                      #The code is so beautiful! C++ sucks! 
                      #This is such a huge DSL. Be cautious. 
+                     #This syntax is the most appealing because it separates
+                     #the position from the drawing implementation, and there
+                     #is no other implementation that does so as well. 
                      curPos.advance! object.width
                    end
           end
