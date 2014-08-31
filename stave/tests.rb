@@ -10,9 +10,9 @@ a.each do |name|
 #Bar.o outputs Bar, excellent! 
 
 
-class M
+class Pos
   attr_accessor :a
-  def here(&block)
+  def here(block)
     instance_eval &block
   end
   def forward(a1)
@@ -21,12 +21,16 @@ class M
   def initialize(a)
     @a=a
   end
-  def cler
-    caller.first
+end
+
+class Note
+  def draw
+    Proc.new do 
+          forward 3
+        end
   end
 end
-m = M.new 3
-m.here do
-   forward 2
- end
-class N
+
+p = Pos.new 5
+n = Note.new
+p.here &n.draw

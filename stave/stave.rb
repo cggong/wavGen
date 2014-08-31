@@ -42,7 +42,7 @@ module Stave
     #Position can be chained: intuitively you have a position object 
     #points at 211B. The position object should be able to create 
     #a Position instance that enable you to describe relative position
-    #to it, which in turn still has such capability. 
+    #to it, which in turn still has such capability (see def around). 
     def initialize(parent = nil)
       @pa = 
         if parent
@@ -52,7 +52,7 @@ module Stave
         end
     end
 
-    def here(&block) #This is fucking good! 
+    def here(block) #This is fucking good! 
       instance_eval &block
     end
 
@@ -133,6 +133,12 @@ module Stave
   end
 
   class WholeNote < NonflaggedNote
+    def draw
+      drawWholeNote
+    end
+
+    def width
+    end
   end
 
   class HalfNote < NonflaggedNote
@@ -148,11 +154,11 @@ module Stave
   end
 
   #Define dotted version of these notes. These should be almost the same. 
-  NoteKinds = [WholeNote, HalfNote, QuaterNote, EighthNote, SixteenthNote]
+  noteKinds = [WholeNote, HalfNote, QuaterNote, EighthNote, SixteenthNote]
   #Now something annoying comes. Logically DEighthNote, DSixteenthNote
   #derives from FlaggedNote, and yet they don't flag. 
   #Second thought: No they don't derive from them. See code below. 
-  NoteKinds.each do |kind|
+  noteKinds.each do |kind|
              define_class('D' + kind.to_s, NonflaggedNote) do 
                attr_accessor :note
                def initialize
@@ -214,27 +220,32 @@ module Stave
     attr_accessor :objects, :meter
     #meter consists of two integers, determines TimeSignature. 
     def draw
-      curPos = around
-      #append BarLine, invoke MusicObject.draw
-      objects.each do |object|
-               curPos.here do
-                       object.draw
-                     end
-               curPos.advance! object.width
-             end
+      Proc.new do
+            curPos = around
+            #append BarLine, invoke MusicObject.draw
+            objects.each do |object|
+                     curPos.here object.draw
+                     #The code is so beautiful! C++ sucks! 
+                     #This is such a huge DSL. Be cautious. 
+                     curPos.advance! object.width
+                   end
+          end
     end
   end
 
   class Stave #collection of Measures
     attr_accessor :measures
     def draw
+      #Stave.draw is fundamentally different from that of other music
+      #objects: it doesn't return a Proc, while others do. This is 
+      #reasonable because Stave.draw needn't be put in some other 
+      #Position. 
+
       #draw staff, invoke Measure.draw
       #also be cautious about cross-measure ties. 
       curPos = Position.new #current position
       measures.each do |measure|
-                curPos.here do 
-                        measure.draw
-                      end
+                curPos.here measure.draw
                 curPos.advance! measure.width
               end
     end
