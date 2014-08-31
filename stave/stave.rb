@@ -47,19 +47,14 @@ module Stave
       @pa = parent ? parent.a + parent.pa : 0
     end
 
-    def here(block) #This is fucking good! 
-      instance_eval &block
+    def around
+      Position.new self
     end
 
     def advance!(distance)
       a += distance
     end
 
-    def around
-      Position.new self
-    end
-
-    private
     def get_b_val(tone)
     end
 
@@ -145,15 +140,12 @@ module Stave
       end
     end
 
-    def drawOvals
+    def drawOvals(pos)
+      curPos = pos.around
       solid = ![WholeNote, HalfNote].contains? self.class
       draw_command = solid ? :drawSolidOval : :drawOval
-      curPos = around
       tones[1].each do |tone| #tone[1] has less notes, appear on the left. 
                 curPos.send draw_command, tone
-                #Now I can't use curPos.here, the incongruity is because
-                #this drawing command is simple, and by using it instead
-                #we avoid creating a new Proc or lambda. 
               end
       curPos.advance! Draw::EX
       tones[0].each do |tone|
@@ -172,7 +164,7 @@ module Stave
   end
 
   class WholeNote < NonflaggedNote
-    def draw
+    def draw(pos)
 
     end
 
@@ -259,20 +251,18 @@ module Stave
   class Measure
     attr_accessor :objects, :meter
     #meter consists of two integers, determines TimeSignature. 
-    def draw
-      Proc.new do
-            curPos = around
-            #append BarLine, invoke MusicObject.draw
-            objects.each do |object|
-                     curPos.here object.draw
-                     #The code is so beautiful! C++ sucks! 
-                     #This is such a huge DSL. Be cautious. 
-                     #This syntax is the most appealing because it separates
-                     #the position from the drawing implementation, and there
-                     #is no other implementation that does so as well. 
-                     curPos.advance! object.width
-                   end
-          end
+    def draw(pos)
+      #append BarLine, invoke MusicObject.draw
+      curPos = pos.around
+      objects.each do |object|
+               object.draw curPos
+               #The code is so beautiful! C++ sucks! 
+               #This is such a huge DSL. Be cautious. 
+               #This syntax is the most appealing because it separates
+               #the position from the drawing implementation, and there
+               #is no other implementation that does so as well. 
+               curPos.advance! object.width
+             end
     end
   end
 
@@ -288,7 +278,7 @@ module Stave
       #also be cautious about cross-measure ties. 
       curPos = Position.new #current position
       measures.each do |measure|
-                curPos.here measure.draw
+                measure.draw curPos
                 curPos.advance! measure.width
               end
     end

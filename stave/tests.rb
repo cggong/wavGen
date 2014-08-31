@@ -86,6 +86,10 @@ class A
   def bark
     'bark'
   end
+
+  def miao
+    'miao'
+  end
 end
 class B < A
 end
