@@ -21,8 +21,12 @@ class M
   def initialize(a)
     @a=a
   end
+  def cler
+    caller.first
+  end
 end
 m = M.new 3
 m.here do
    forward 2
  end
+class N

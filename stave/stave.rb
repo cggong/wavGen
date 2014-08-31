@@ -46,7 +46,7 @@ module Stave
     def initialize(parent = nil)
       @pa = 
         if parent
-          parent.a
+          parent.a + parent.pa
         else
           0
         end
@@ -56,14 +56,19 @@ module Stave
       instance_eval &block
     end
 
-    def forward!(distance)
+    def advance!(distance)
       a += distance
+    end
+
+    def around
+      Position.new self
     end
 
     private:
       def drawWholeNote(b) #and a bunch of drawing methods. 
         #ultimately calls Draw.drawWholeNote
       end
+
 
   end
 
@@ -209,25 +214,29 @@ module Stave
     attr_accessor :objects, :meter
     #meter consists of two integers, determines TimeSignature. 
     def draw
+      curPos = around
       #append BarLine, invoke MusicObject.draw
-      current_a = 0
       objects.each do |object|
-               object.draw #unfinished
+               curPos.here do
+                       object.draw
+                     end
+               curPos.advance! object.width
              end
     end
+  end
 
-    class Stave #collection of Measures
-      attr_accessor :measures
-      def draw
-        #draw staff, invoke Measure.draw
-        #also be cautious about cross-measure ties. 
-        curPos = Position.new #current position
-        measures.each do |measure|
-                  curPos.here do 
-                          measure.draw
-                        end
-                  curPos.forward! measure.width
-                end
-      end
+  class Stave #collection of Measures
+    attr_accessor :measures
+    def draw
+      #draw staff, invoke Measure.draw
+      #also be cautious about cross-measure ties. 
+      curPos = Position.new #current position
+      measures.each do |measure|
+                curPos.here do 
+                        measure.draw
+                      end
+                curPos.advance! measure.width
+              end
     end
   end
+end
