@@ -173,8 +173,7 @@ module Stave
 
   class WholeNote < NonflaggedNote
     def draw
-      Proc.new do
-            drawWholeNote
+
     end
 
     def initialize(tones)

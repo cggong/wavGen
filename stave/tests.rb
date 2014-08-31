@@ -12,6 +12,9 @@ a.each do |name|
 
 class Pos
   attr_accessor :a
+  def around
+    Pos.new @a
+  end
   def here(block)
     instance_eval &block
   end
@@ -33,7 +36,7 @@ end
 
 p = Pos.new 5
 n = Note.new
-p.here &n.draw
+p.here n.draw
 
 ####################
 
@@ -61,3 +64,30 @@ end
 aa = AA.new
 aa.a
 
+####################
+class Note
+  def drawOval(pos)
+    pos.forward 3
+  end
+end
+
+class WNote < Note
+  def draw(pos)
+    drawOval pos
+  end
+end
+
+wn = WNote.new
+p = Pos.new 5
+wn.draw p
+
+####################
+class A
+  def bark
+    'bark'
+  end
+end
+class B < A
+end
+b = B.new
+b.bark
