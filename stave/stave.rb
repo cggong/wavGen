@@ -10,6 +10,10 @@ module Stave
   #presumably a list. After I stored it, let the client program
   #to parse it for itself, see staveview.h
 
+  #This module primarily concerns with the rendering of stave. 
+  #Inputting DSL can be implemented in another module. 
+
+
   #This is a useful method. 
   #https://ruby-china.org/topics/17382
   def define_class(name, ancestor = Object)
@@ -18,19 +22,71 @@ module Stave
     Object.const_get(name)      # return defined class always
   end
 
+
+
   class Position
     #Each music object occupies some place, which should be 
     #characterized by this class. A position has two representations: 
     #the first (high level) as the x-coordinate on the stave if the 
     #stave is rendered on an infinitely wide page, and line number
-    #on which it occupies. 
+    #on which it occupies. *** I'll call it a, b. ***
     #the second (low level) as x and y on the image. 
+    attr_accessor :a, :b, :pa 
+    #pa is parent's a
 
     #When we specify a position in MusicObject, we specify the high
     #level version. The conversion between high and low position
     #should be implemented in the class, which enables us to create
     #low-level drawing commands to the C++ drawing program. 
+
+    #Position can be chained: intuitively you have a position object 
+    #points at 211B. The position object should be able to create 
+    #a Position instance that enable you to describe relative position
+    #to it, which in turn still has such capability. 
+    def initialize(parent = nil)
+      @pa = 
+        if parent
+          parent.a
+        else
+          0
+        end
+    end
+
+    def here(&block) #This is fucking good! 
+      instance_eval &block
+    end
+
+    def forward!(distance)
+      a += distance
+    end
+
+    private:
+      def drawWholeNote(b) #and a bunch of drawing methods. 
+        #ultimately calls Draw.drawWholeNote
+      end
+
   end
+
+
+  module Draw #layout constants and drawing methods
+    W = 100 #width
+    H = 5 #distance between two lines.
+    D = 20 #space between two five-lines. 
+
+    def self.drawWholeNote(x, y)
+    end
+
+    def self.drawSolidWholeNote(x, y)
+    end
+
+    def self.drawThinLine(x1, y1, x2, y2)
+    end
+
+    def self.drawThickSlantedLine(x1, y1, x2, y2, thickness)
+    end
+
+  end
+
 
   class Flag
     #Flags seems to be so annoying that I decided to make it a 
@@ -64,7 +120,8 @@ module Stave
   end
 
   class FlaggedNote < Note 
-    #Cautious! Flagged notes can stick together. 
+    #Cautious! Flagged notes can stick together, so:
+    attr_accessor :flag
   end
 
   class NonflaggedNote < Note
@@ -91,23 +148,23 @@ module Stave
   #derives from FlaggedNote, and yet they don't flag. 
   #Second thought: No they don't derive from them. See code below. 
   NoteKinds.each do |kind|
-    define_class('D' + kind.to_s, NonflaggedNote) do 
-      attr_accessor :note
-      def initialize
-        note = kind.new 
-      end
+             define_class('D' + kind.to_s, NonflaggedNote) do 
+               attr_accessor :note
+               def initialize
+                 note = kind.new 
+               end
 
-      def width
-        #something like call that in note, then add a constant, i.e., width of dot. 
-      end
+               def width
+                 #something like call that in note, then add a constant, i.e., width of dot. 
+               end
 
-      def draw
-        #something like call that in note, then draw a dot. 
-      end
-    end
-    #So clean! The code didn't grow out of control! 
-  end
-    
+               def draw
+                 #something like call that in note, then draw a dot. 
+               end
+             end
+             #So clean! The code didn't grow out of control! 
+           end
+  
 
   def newNote(duration, clef)
     recipe = {4 => WholeNote, 3 => DHalfNote, 2 => HalfNote, 1 => QuaterNote,
@@ -153,14 +210,24 @@ module Stave
     #meter consists of two integers, determines TimeSignature. 
     def draw
       #append BarLine, invoke MusicObject.draw
+      current_a = 0
+      objects.each do |object|
+               object.draw #unfinished
+             end
     end
-  end
 
-  class Stave #collection of Measures
-    attr_accessor :measures
-    def draw
-      #draw staff, invoke Measure.draw
-      #also be cautious about cross-measure ties. 
+    class Stave #collection of Measures
+      attr_accessor :measures
+      def draw
+        #draw staff, invoke Measure.draw
+        #also be cautious about cross-measure ties. 
+        curPos = Position.new #current position
+        measures.each do |measure|
+                  curPos.here do 
+                          measure.draw
+                        end
+                  curPos.forward! measure.width
+                end
+      end
     end
   end
-end
