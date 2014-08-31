@@ -63,10 +63,12 @@ module Stave
     def get_b_val(tone)
     end
 
-    def drawWholeNote(tone) #and a bunch of drawing methods. 
+    def drawOval(tone) #and a bunch of drawing methods. 
       #ultimately calls Draw.drawWholeNote
     end
 
+    def drawSolidOval(tone)
+    end
 
   end
 
@@ -76,17 +78,17 @@ module Stave
     H = 5 #distance between two lines.
     D = 20 #space between two five-lines. 
 
-    #regarding an ellipsis for note: 
+    #regarding an oval for note: 
     EX = 8
     EY = 5
 
     #Distance between accidental and note
     ShortDist = 1
 
-    def self.drawWholeNote(x, y)
+    def self.drawOval(x, y)
     end
 
-    def self.drawSolidWholeNote(x, y)
+    def self.drawSolidOval(x, y)
     end
 
     def self.drawThinLine(x1, y1, x2, y2)
@@ -104,7 +106,8 @@ module Stave
   end
 
   class MusicObject
-    #should have methods width, draw
+    #should have methods width, draw, and beware: ALL THE draw
+    #METHODS ARE EXECUTED UNDER Position.instance_eval. 
     attr_accessor :width
   end
 
@@ -131,7 +134,32 @@ module Stave
   class Note < MusicObject #A bunch of notes sticking together
     attr_accessor :clef, :duration, :tones, :accidental
     #clef: :treble, :bass
+    private
+    def structure(tones) #can't explain, please ask the author! 
+      #How are the notes structured? 
+      evenTones = tones.select &:even? 
+      oddTones = tones.select &:odd? 
+      if evenTones.length > oddTones.length 
+      then [evenTones, oddTones] 
+      else [oddTones, evenTones]
+      end
+    end
 
+    def drawOvals
+      solid = ![WholeNote, HalfNote].contains? self.class
+      draw_command = solid ? :drawSolidOval : :drawOval
+      curPos = around
+      tones[1].each do |tone| #tone[1] has less notes, appear on the left. 
+                curPos.send draw_command, tone
+                #Now I can't use curPos.here, the incongruity is because
+                #this drawing command is simple, and by using it instead
+                #we avoid creating a new Proc or lambda. 
+              end
+      curPos.advance! Draw::EX
+      tones[0].each do |tone|
+                curPos.send draw_command, tone
+              end
+    end
   end
 
   class FlaggedNote < Note 
@@ -140,23 +168,17 @@ module Stave
   end
 
   class NonflaggedNote < Note
+    #notes playing at the same time. 
   end
 
   class WholeNote < NonflaggedNote
     def draw
-      drawWholeNote
+      Proc.new do
+            drawWholeNote
     end
 
     def initialize(tones)
-      #How are the notes structured? 
-      evenTones = tones.select &:even? 
-      oddTones = tones.select &:odd? 
-      @tones = 
-        if evenTones.length > oddTones.length 
-        then [evenTones, oddTones] 
-        else [oddTones, evenTones]
-        end
-
+      @tones = structure tones
     end
   end
 

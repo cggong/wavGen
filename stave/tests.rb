@@ -34,3 +34,30 @@ end
 p = Pos.new 5
 n = Note.new
 p.here &n.draw
+
+####################
+
+module Con
+  A=10
+end
+Con::A
+#=>10
+
+####################
+class Note
+  def self.a
+    Con::A
+  end
+end
+
+####################
+class A
+  def a
+    self
+  end
+end
+class AA < A
+end
+aa = AA.new
+aa.a
+
